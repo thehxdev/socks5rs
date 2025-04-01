@@ -1,0 +1,13 @@
+[package]
+name = "socks5rs"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+
+[[example]]
+name = "server"

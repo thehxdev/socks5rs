@@ -18,13 +18,21 @@ pub mod command {
     pub const ASSOCIATE: u8 = 0x03;
 }
 
+pub mod method {
+    pub const NO_AUTH: u8 = 0x00;
+    pub const GSSAPI: u8 = 0x01;
+    pub const USER_PASS: u8 = 0x02;
+    pub const NO_ACCEPTABLE_METHODS: u8 = 0xff;
+}
+
 #[repr(u8)]
 #[derive(Debug)]
 /// Byte representation of socks5 authentication methods
 pub enum Method {
-    NoAuth = 0x00,
-    UserPass = 0x02,
-    NoAcceptableMethods = 0xff,
+    NoAuth = method::NO_AUTH,
+    GSSAPI = method::GSSAPI,
+    UserPass = method::USER_PASS,
+    NoAcceptableMethods = method::NO_ACCEPTABLE_METHODS,
 }
 
 #[repr(u8)]

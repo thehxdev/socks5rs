@@ -1,9 +1,7 @@
-#[allow(dead_code,unused)]
-
-use std::net::{IpAddr, SocketAddr};
+use std::net::SocketAddr;
 use tokio::{
     io::{self, AsyncRead, AsyncWrite, AsyncReadExt, AsyncWriteExt, BufStream},
-    net::{TcpListener, TcpStream, TcpSocket},
+    net::{self, TcpListener, TcpStream, TcpSocket},
 };
 use socks5rs::{self, consts, error::Result, Command, DestAddr, Request};
 
@@ -22,7 +20,6 @@ async fn main() -> io::Result<()> {
             match handle_client_connection(&mut stream).await {
                 Ok(()) => (),
                 Err(e) => {
-                    eprintln!("{e:?}");
                     _ = socks5rs::io::send_reply(&mut stream, Some(e), local_addr).await;
                 },
             };
@@ -61,12 +58,28 @@ where
     let target = TcpSocket::new_v4()?;
     let mut s = match req.dest_addr {
         DestAddr::IP(addr) => target.connect(SocketAddr::new(addr, req.dest_port)).await?,
-        // Skip domain names for simplicity
-        _ => return Ok(()),
+        DestAddr::FQDN(domain) => {
+            let host = join_host_and_port(String::from_utf8(domain).unwrap().as_str(), req.dest_port);
+            let addr = resolve_domain_name(host.as_str()).await?;
+            target.connect(addr).await?
+        },
     };
 
     socks5rs::io::send_reply(stream, None, s.local_addr().unwrap()).await?;
 
     io::copy_bidirectional(stream, &mut s).await?;
     Ok(())
+}
+
+async fn resolve_domain_name(host: &str) -> Result<SocketAddr> {
+    let addrs: Vec<SocketAddr> = net::lookup_host(host).await?.collect();
+    Ok(addrs[0])
+}
+
+fn join_host_and_port(host: &str, port: u16) -> String {
+    let mut s = String::with_capacity(host.len() + 6);
+    s.push_str(host);
+    s.push(':');
+    s.push_str(port.to_string().as_str());
+    s
 }

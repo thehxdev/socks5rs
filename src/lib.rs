@@ -1,5 +1,3 @@
-// TODO: Write tests!
-
 use std::net::IpAddr;
 
 pub mod consts;

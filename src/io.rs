@@ -11,6 +11,7 @@ use tokio::io::{
 use crate::consts;
 use crate::error::{Error, Result};
 
+/// Helper function to read at least `count` bytes from a Reader
 pub async fn read_at_least<R>(r: &mut R, buffer: &mut [u8], count: usize) -> Option<usize>
 where
     R: AsyncRead + Unpin + Send + Sync,

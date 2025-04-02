@@ -1,6 +1,7 @@
 #[repr(u8)]
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug)]
+/// Socks5 related errors that can be sent to client as Reply
 pub enum Socks5ErrorKind {
     GeneralServerFailure = 0x01,
     ConnectionNotAllowed,
@@ -36,12 +37,16 @@ impl ToString for Socks5ErrorKind {
 
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug)]
+/// Errors that are related to parsing Socks5 requests
 pub enum ParserErrorKind {
+    /// Buffer is shorter than expected
     ShortBuffer,
+    /// No authentication methods provided in first client request
     ZeroAuthMethods,
 }
 
 #[derive(Debug)]
+/// Error representation. This enum captures IO, Socks5 and Parser related errors.
 pub enum Repr {
     IO(tokio::io::Error),
     Socks5(Socks5ErrorKind),
@@ -56,6 +61,7 @@ pub struct Error {
 impl Error {
     pub const SHORT_BUFFER_ERROR: Error = Error {repr: Repr::Parser(ParserErrorKind::ShortBuffer)};
 
+    /// Convert Error type to Socks5 reply byte
     pub fn to_socks5_reply(&self) -> u8 {
         use tokio::io::ErrorKind;
         match self.repr {
@@ -107,4 +113,6 @@ impl std::fmt::Display for Error {
     }
 }
 
+/// Socks5 result type to capture all kinds of errors that might be happen while
+/// working with the protocol.
 pub type Result<T> = std::result::Result<T, Error>;

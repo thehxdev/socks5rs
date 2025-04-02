@@ -2,7 +2,10 @@
 
 use crate::error::{Error, Socks5ErrorKind};
 
+/// Byte representation of version field in socks5 request and responses
 pub const SOCKS5: u8 = 0x05;
+
+/// Reserved byte
 pub const RESERVED: u8 = 0x00;
 
 pub mod addr_type {

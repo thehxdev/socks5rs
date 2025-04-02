@@ -39,11 +39,11 @@ where
 
     let ip: &[u8] = match addr.ip() {
         IpAddr::V4(v4) => {
-            header[3] = consts::AddrType::V4 as u8;
+            header[3] = consts::addr_type::V4;
             &v4.octets()
         },
         IpAddr::V6(v6) => {
-            header[3] = consts::AddrType::V6 as u8;
+            header[3] = consts::addr_type::V6;
             &v6.octets()
         },
     };

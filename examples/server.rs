@@ -33,7 +33,7 @@ async fn handle_client_connection(stream: &mut TcpStream) -> Result<()> {
     // after write operation to ensure the bytes reached to their destination.
     let mut stream = BufStream::new(stream);
 
-    const BUFCAP: usize = socks5rs::consts::MTU;
+    const BUFCAP: usize = 9000;
     let mut buffer = [0_u8; BUFCAP];
     let mut n = stream.read(&mut buffer[..BUFCAP]).await?;
     let (_, _methods) = socks5rs::parse_client_methods(&buffer[..n])?;

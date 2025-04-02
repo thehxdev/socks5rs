@@ -4,7 +4,6 @@ use crate::error::{Error, Socks5ErrorKind};
 
 pub const SOCKS5: u8 = 0x05;
 pub const RESERVED: u8 = 0x00;
-pub const MTU: usize = 1280;
 
 pub mod addr_type {
     pub const V4: u8 = 0x01;

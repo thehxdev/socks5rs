@@ -38,7 +38,7 @@ async fn handle_client_connection(stream: &mut TcpStream) -> Result<()> {
     let mut n = stream.read(&mut buffer[..BUFCAP]).await?;
     let (_, _methods) = socks5rs::parse_client_methods(&buffer[..n])?;
 
-    stream.write_all(&[ consts::SOCKS5, consts::Method::NoAuth as u8 ]).await?;
+    stream.write_all(&[ consts::SOCKS5, consts::method::NO_AUTH ]).await?;
     stream.flush().await?;
 
     n = stream.read(&mut buffer[..BUFCAP]).await?;

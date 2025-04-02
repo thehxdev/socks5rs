@@ -11,7 +11,7 @@ description = "Minimal, Low-Level and simple socks5 protocol implementation"
 crate-type = ["lib"]
 
 [dependencies]
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["io-util"] }
 
 [[example]]
 name = "server"

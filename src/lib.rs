@@ -1,3 +1,6 @@
+/// socks5rs is a minimal, low-level and simple socks5 protocol implementation.
+/// It operates on raw bytes instead of abstracting I/O to achive better reusability and testablity.
+
 use std::net::IpAddr;
 
 pub mod consts;

@@ -9,8 +9,8 @@ pub mod error;
 
 use error::{Error, Result, ParserErrorKind};
 
-/// Destination address in a socks5 request
 #[derive(Debug)]
+/// Destination address in a socks5 request
 pub enum DestAddr {
     /// IP address
     IP(IpAddr),
@@ -19,12 +19,16 @@ pub enum DestAddr {
 }
 
 #[derive(Debug)]
+/// Socks5 request
 pub struct Request {
+    /// Destination address
     pub dest_addr: DestAddr,
+    /// Destination port
     pub dest_port: u16,
 }
 
 #[derive(Debug)]
+/// Socks5 Command
 pub enum Command {
     Connect(Request),
     Bind(Request),

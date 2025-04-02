@@ -1,11 +1,11 @@
 [package]
 name = "socks5rs"
-description = "Minimal, Low-Level and simple socks5 protocol implementation"
 version = "0.1.2"
 edition = "2024"
 license = "MIT"
-license-file = "LICENSE"
 repository = "https://github.com/thehxdev/socks5rs"
+authors = [ "Hossein Khosravi <hossein.khosravi.ce@gmail.com>" ]
+description = "Minimal, Low-Level and simple socks5 protocol implementation"
 
 [lib]
 crate-type = ["lib"]

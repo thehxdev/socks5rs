@@ -5,6 +5,7 @@ use tokio::{
 };
 use socks5rs::{self, consts, error::Result, Command, DestAddr, Request};
 
+const BUFFER_CAP: usize = 9000;
 const BIND_ADDRESS: &str = "[::]:1080";
 
 #[tokio::main]
@@ -20,7 +21,7 @@ async fn main() -> io::Result<()> {
             match handle_client_connection(&mut stream).await {
                 Ok(()) => (),
                 Err(e) => {
-                    _ = socks5rs::io::send_reply(&mut stream, Some(e), local_addr).await;
+                    _ = send_reply(&mut stream, Some(e), local_addr).await;
                 },
             };
             _ = stream.shutdown().await;
@@ -33,15 +34,14 @@ async fn handle_client_connection(stream: &mut TcpStream) -> Result<()> {
     // after write operation to ensure the bytes reached to their destination.
     let mut stream = BufStream::new(stream);
 
-    const BUFCAP: usize = 9000;
-    let mut buffer = [0_u8; BUFCAP];
-    let mut n = stream.read(&mut buffer[..BUFCAP]).await?;
+    let mut buffer = [0_u8; BUFFER_CAP];
+    let mut n = stream.read(&mut buffer[..BUFFER_CAP]).await?;
     let (_, _methods) = socks5rs::parse_client_methods(&buffer[..n])?;
 
     stream.write_all(&[ consts::SOCKS5, consts::method::NO_AUTH ]).await?;
     stream.flush().await?;
 
-    n = stream.read(&mut buffer[..BUFCAP]).await?;
+    n = stream.read(&mut buffer[..BUFFER_CAP]).await?;
 
     let (_, command) = socks5rs::parse_client_request(&buffer[..n])?;
 
@@ -65,7 +65,7 @@ where
         },
     };
 
-    socks5rs::io::send_reply(stream, None, s.local_addr().unwrap()).await?;
+    send_reply(stream, None, s.local_addr().unwrap()).await?;
 
     io::copy_bidirectional(stream, &mut s).await?;
     Ok(())
@@ -82,4 +82,14 @@ fn join_host_and_port(host: &str, port: u16) -> String {
     s.push(':');
     s.push_str(port.to_string().as_str());
     s
+}
+
+async fn send_reply<W>(w: &mut W, reply: Option<socks5rs::error::Error>, addr: SocketAddr) -> Result<()>
+where
+    W: AsyncWrite + Unpin + Send + Sync
+{
+    let reply = socks5rs::Reply::new(reply, addr);
+    w.write_all(&reply).await?;
+    w.flush().await?;
+    Ok(())
 }

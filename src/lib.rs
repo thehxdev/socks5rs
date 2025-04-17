@@ -1,10 +1,9 @@
 /// socks5rs is a minimal, low-level and simple socks5 protocol implementation.
 /// It operates on raw bytes instead of abstracting I/O to achive better reusability and testablity.
 
-use std::net::IpAddr;
+use std::net::{IpAddr, SocketAddr};
 
 pub mod consts;
-pub mod io;
 pub mod error;
 
 use error::{Error, Result, ParserErrorKind};
@@ -112,6 +111,42 @@ pub const fn check_buffer_length(buffer: &[u8], min_length: usize) -> Result<()>
     }
     Ok(())
 }
+
+pub struct Reply;
+
+impl Reply {
+    pub fn new(reply: Option<Error>, addr: SocketAddr) -> Vec<u8> {
+        const HEADER_SIZE: usize = 4;
+        let reply_byte: u8 = match reply {
+            Some(r) => r.into(),
+            None => 0x00,
+        };
+
+        let mut header: [u8; HEADER_SIZE] = [consts::SOCKS5, reply_byte, consts::RESERVED, 0x00];
+
+        let ip: &[u8] = match addr.ip() {
+            IpAddr::V4(v4) => {
+                header[3] = consts::addr_type::V4;
+                &v4.octets()
+            },
+            IpAddr::V6(v6) => {
+                header[3] = consts::addr_type::V6;
+                &v6.octets()
+            },
+        };
+
+        let addr_size = ip.len();
+        let buffer_cap: usize = addr_size + HEADER_SIZE + 2;
+
+        let mut buffer: Vec<u8> = Vec::with_capacity(buffer_cap);
+        buffer.extend_from_slice(&header);
+        buffer.extend_from_slice(ip);
+        buffer.extend_from_slice(&addr.port().to_be_bytes());
+
+        buffer
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

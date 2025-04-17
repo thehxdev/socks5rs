@@ -1,6 +1,6 @@
 #[repr(u8)]
 #[non_exhaustive]
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, Copy)]
 /// Socks5 related errors that can be sent to client as Reply
 pub enum Socks5ErrorKind {
     GeneralServerFailure = 0x01,
@@ -36,7 +36,7 @@ impl ToString for Socks5ErrorKind {
 }
 
 #[non_exhaustive]
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, Copy)]
 /// Errors that are related to parsing Socks5 requests
 pub enum ParserErrorKind {
     /// Buffer is shorter than expected
@@ -45,10 +45,9 @@ pub enum ParserErrorKind {
     ZeroAuthMethods,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 /// Error representation. This enum captures IO, Socks5 and Parser related errors.
 pub enum Repr {
-    IO(tokio::io::Error),
     Socks5(Socks5ErrorKind),
     Parser(ParserErrorKind),
 }
@@ -63,24 +62,10 @@ impl Error {
 
     /// Convert Error type to Socks5 reply byte
     pub fn to_socks5_reply(&self) -> u8 {
-        use tokio::io::ErrorKind;
         match self.repr {
-            Repr::IO(ref e) => {
-                let code = match e.kind() {
-                    ErrorKind::NetworkUnreachable => Socks5ErrorKind::NetworkUnreachable,
-                    _ => Socks5ErrorKind::GeneralServerFailure,
-                };
-                code as u8
-            },
             Repr::Socks5(e) => e.into(),
             Repr::Parser(_) => Socks5ErrorKind::GeneralServerFailure as u8,
         }
-    }
-}
-
-impl From<tokio::io::Error> for Error {
-    fn from(value: tokio::io::Error) -> Self {
-        Self { repr: Repr::IO(value) }
     }
 }
 
@@ -96,6 +81,14 @@ impl From<ParserErrorKind> for Error {
     }
 }
 
+impl<E> From<E> for Error
+    where E: std::error::Error
+{
+    fn from(_: E) -> Self {
+        Self { repr: Repr::Socks5(Socks5ErrorKind::GeneralServerFailure) }
+    }
+}
+
 impl Into<u8> for Error {
     fn into(self) -> u8 {
         self.to_socks5_reply()
@@ -106,7 +99,6 @@ impl Into<u8> for Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.repr {
-            Repr::IO(e) => write!(f, "{}", e.kind()),
             Repr::Socks5(e) => write!(f, "{}", e.to_string()),
             Repr::Parser(e) => write!(f, "{e:?}"),
         }

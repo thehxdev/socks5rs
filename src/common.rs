@@ -123,3 +123,10 @@ pub mod method {
     }
 }
 
+pub const fn check_buffer_length(buffer: &[u8], min_length: usize) -> crate::error::Result<()> {
+    if buffer.len() < min_length {
+        return Err(crate::error::Error::SHORT_BUFFER_ERROR);
+    }
+    Ok(())
+}
+

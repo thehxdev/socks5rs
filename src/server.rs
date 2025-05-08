@@ -1,6 +1,6 @@
 use {
     crate::{*, error::*},
-    common::{command::*, addrtype::*, DestAddr, Request},
+    common::{*, command::*, addrtype::*, DestAddr, Request},
 };
 
 #[cfg(feature = "io-util")]

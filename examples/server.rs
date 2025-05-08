@@ -1,9 +1,20 @@
-use std::net::SocketAddr;
-use tokio::{
-    io::{self, AsyncRead, AsyncWrite, AsyncReadExt, AsyncWriteExt, BufStream},
-    net::{self, TcpListener, TcpStream, TcpSocket},
+use {
+    std::net::SocketAddr,
+    tokio::{
+        io::{self, AsyncRead, AsyncWrite, AsyncReadExt, AsyncWriteExt, BufStream},
+        net::{self, TcpListener, TcpStream, TcpSocket},
+    },
+    socks5rs::{self, common, error::Result, server},
 };
-use socks5rs::{self, consts, error::Result, Command, DestAddr, Request};
+
+use common::{
+    DestAddr,
+    Request,
+    command::Command,
+};
+
+#[cfg(feature = "io-util")]
+use server::send_reply;
 
 const BUFFER_CAP: usize = 9000;
 const BIND_ADDRESS: &str = "[::]:1080";
@@ -36,14 +47,14 @@ async fn handle_client_connection(stream: &mut TcpStream) -> Result<()> {
 
     let mut buffer = [0_u8; BUFFER_CAP];
     let mut n = stream.read(&mut buffer[..BUFFER_CAP]).await?;
-    let (_, _methods) = socks5rs::parse_client_methods(&buffer[..n])?;
+    let (_, _methods) = server::parse_client_methods(&buffer[..n])?;
 
-    stream.write_all(&[ consts::SOCKS5, consts::method::NO_AUTH ]).await?;
+    stream.write_all(&[ common::SOCKS5, common::method::NO_AUTH ]).await?;
     stream.flush().await?;
 
     n = stream.read(&mut buffer[..BUFFER_CAP]).await?;
 
-    let (_, command) = socks5rs::parse_client_request(&buffer[..n])?;
+    let (_, command) = server::parse_client_request(&buffer[..n])?;
 
     match command {
         Command::Connect(r) => handle_connect_command(stream.get_mut(), r).await,
@@ -56,6 +67,7 @@ where
     RW: AsyncRead + AsyncWrite + Unpin + Send + Sync,
 {
     let target = TcpSocket::new_v4()?;
+    dbg!(&req.dest_addr);
     let mut s = match req.dest_addr {
         DestAddr::IP(addr) => target.connect(SocketAddr::new(addr, req.dest_port)).await?,
         DestAddr::FQDN(domain) => {
@@ -84,11 +96,12 @@ fn join_host_and_port(host: &str, port: u16) -> String {
     s
 }
 
+#[cfg(not(feature = "io-util"))]
 async fn send_reply<W>(w: &mut W, reply: Option<socks5rs::error::Error>, addr: SocketAddr) -> Result<()>
 where
     W: AsyncWrite + Unpin + Send + Sync
 {
-    let reply = socks5rs::Reply::new(reply, addr);
+    let reply = server::Reply::new(reply, addr);
     w.write_all(&reply).await?;
     w.flush().await?;
     Ok(())

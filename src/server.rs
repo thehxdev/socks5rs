@@ -4,7 +4,7 @@ use {
 };
 
 #[cfg(feature = "io-util")]
-use tokio::io::AsyncWrite;
+use tokio::io::{AsyncWrite, AsyncWriteExt};
 
 /// Parse client first request version number and provided authentication methods
 pub fn parse_client_methods(buffer: &[u8]) -> Result<(u8, Vec<u8>)> {
@@ -110,11 +110,11 @@ impl Reply {
 }
 
 #[cfg(feature = "io-util")]
-async fn send_reply<W>(w: &mut W, reply: Option<Error>, addr: SocketAddr) -> Result<()>
+pub async fn send_reply<W>(w: &mut W, reply: Option<Error>, addr: SocketAddr) -> Result<()>
 where
     W: AsyncWrite + Unpin + Send + Sync
 {
-    let reply = socks5rs::Reply::new(reply, addr);
+    let reply = Reply::new(reply, addr);
     w.write_all(&reply).await?;
     w.flush().await?;
     Ok(())
